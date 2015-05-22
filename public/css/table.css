@@ -1,0 +1,12 @@
+.order-results td
+{
+    border: 1px solid #000;
+    border-collapse: collapse;
+    text-align: center;
+    padding: 6px;
+}
+
+.order-results
+{
+    margin: 0 auto;
+}
