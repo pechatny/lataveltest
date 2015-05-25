@@ -23,67 +23,58 @@ class Order extends Model {
 
     public function orders()
     {
-        $query =
-            'SELECT
-                orders.order_id,
-                orders.order_date,
-                COUNT(order_positions.id) as good_count,
-                SUM(goods.price) as total_price
-            FROM
-                orders
-                INNER JOIN order_positions
-                ON orders.order_id = order_positions.order_id
-
-                INNER JOIN goods
-                ON order_positions.good_id = goods.good_id
-            GROUP BY
-                orders.order_id';
-
-        return DB::select($query);
+        return $this->belongsToMany('App\Models\Good', 'order_positions','order_id')
+            ->selectRaw('count(order_positions.order_id) as good_count, sum(price) as total_price')
+            ->groupBy('order_id');
     }
 
     public function order($id)
     {
-        $query =
-            'SELECT
-                orders.order_id,
-                orders.order_date,
-                COUNT(order_positions.id) as good_count,
-                SUM(goods.price) as total_price
-            FROM
-                orders,
-                order_positions,
-                goods
-            WHERE
-                orders.order_id = ? AND
-                order_positions.order_id = ? AND
-                order_positions.good_id = goods.good_id
-            GROUP BY
-                orders.order_id';
-
-        return DB::select($query, [$id, $id]);
+        return $this->belongsToMany('App\Models\Good', 'order_positions','order_id')
+            ->selectRaw('count(order_positions.order_id) as good_count, sum(price) as total_price')
+            ->orWhere('order_positions.order_id', '=', $id)
+            ->groupBy('order_id');
     }
 
     public function order_where_two($id_1, $id_2)
     {
-        $query =
-            'SELECT
-                orders.order_id,
-                orders.order_date,
-                COUNT(order_positions.id) as good_count,
-                SUM(goods.price) as total_price
-            FROM
-                orders,
-                order_positions,
-                goods
-            WHERE
-                orders.order_id = order_positions.order_id AND
-                order_positions.order_id IN ( ?, ? ) AND
-                order_positions.good_id = goods.good_id
-            GROUP BY
-                orders.order_id';
+        return $this->with('orders')
+            ->whereHas('orderPositions',
+                function($query) use ($id_1)
+                {
+                    $query->where('good_id', '=', $id_1);
+                })
+            ->whereHas('orderPositions',
+                function($query) use ($id_2)
+                {
+                    $query->where('good_id', '=', $id_2);
+                });
+    }
 
-        return DB::select($query, [$id_1, $id_2]);
+    public function order_where_not($id_1, $id_2)
+    {
+        return $this->with('orders')
+            ->whereHas('orderPositions',
+                function($query) use ($id_1)
+                {
+                    $query->where('good_id', '=', $id_1);
+                })
+            ->whereDoesntHave('orderPositions',
+                function($query) use ($id_2)
+                {
+                    $query->where('good_id', '=', $id_2);
+                });
+    }
+
+    public function order_where_only($id_1)
+    {
+        return $this->with('orders')
+            ->whereHas('orderPositions',
+                function($query) use ($id_1)
+                {
+                    $query->where('good_id', '=', $id_1);
+                });
+
     }
 
 }

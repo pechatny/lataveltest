@@ -13,12 +13,12 @@
             <td>Количество проданных</td>
             <td>Сумма</td>
         </tr>
-    @foreach( $ordersResult as $orderResult)
+    @foreach( $arGoods as $arGood)
         <tr>
-            <td>{{ $orderResult->title }}</td>
-            <td>{{ $orderResult->price }}</td>
-            <td>{{ $orderResult->good_count }}</td>
-            <td>{{ $orderResult->total_price }}</td>
+            <td>{{ $arGood['title'] }}</td>
+            <td>{{ $arGood['price'] }}</td>
+            <td>{{ $arGood['good_count'] }}</td>
+            <td>{{ $arGood['total_price'] }}</td>
         </tr>
 
     @endforeach

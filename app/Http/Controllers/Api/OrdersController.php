@@ -22,7 +22,7 @@ class OrdersController extends Controller {
         $ids = explode(',', $ids);
 
         //Проверка на сужествование товаров в таблице goods
-        $goods = Good::select('good_id')->whereIn('good_id', $ids)->get();
+        $goods = Good::whereIn('good_id', $ids)->get();
         if($goods->count() > 0)
         {
             //Сбор всех good_id в массив
@@ -55,47 +55,80 @@ class OrdersController extends Controller {
     //Получить все заказы
     public function orders()
     {
-        $orders = new Order();
-        $ordersResult = $orders->orders();
+        $orders  = Order::with('orders')->get();
 
-        return $ordersResult;
+        return $this->arrayToJson($orders);
     }
 
     //Получить заказ
     public function order($id)
     {
         $order = new Order();
-        $orderResult = $order->order((int)$id);
-        return $orderResult;
+        $orderResult = $order->order($id)->get();
+
+        $arJsonResult = array();
+        $order_id = $id;
+        $order_date = $order->find($id)->order_date;
+        $good_count = $orderResult->first()->good_count;
+        $total_price = $orderResult->first()->total_price;
+
+        array_push($arJsonResult,compact('order_id', 'order_date', 'good_count', 'total_price'));
+
+        return json_encode($arJsonResult);
     }
 
     public function orders_where_two($id_1, $id_2)
     {
-        $order = new Order();
-        $orderResult = $order->order_where_two((int)$id_1, (int)$id_2);
-        return $orderResult;
+        $order = new Order;
+        $orders = $order->order_where_two((int)$id_1, (int)$id_2)->get();
+
+        return $this->arrayToJson($orders);
     }
 
-	/**
-	 * Update the specified resource in storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function update($id)
-	{
-		//
-	}
+    public function orders_where_not($id_1, $id_2)
+    {
+        $order = new Order;
+        $orders = $order->order_where_not((int)$id_1, (int)$id_2)->get();
 
-	/**
-	 * Remove the specified resource from storage.
-	 *
-	 * @param  int  $id
-	 * @return Response
-	 */
-	public function destroy($id)
-	{
-		//
-	}
+        return $this->arrayToJson($orders);
+    }
+
+    public function orders_where_only($id_1)
+    {
+        $order = new Order;
+        $orders = $order->order_where_only((int)$id_1)->get();
+
+        return $this->arrayToJson($orders, true);
+    }
+
+
+    //Фильтрует массив и возвращает JSON
+    protected function arrayToJson($items, $special = false)
+    {
+        $arItems = array();
+
+        foreach($items as $item)
+        {
+            $order_id = $item->order_id;
+            $order_date = $item->order_date;
+            $good_count = $item->orders->first()->good_count;
+            $total_price = $item->orders->first()->total_price;
+
+            if($special)
+            {
+                if($good_count == 1)
+                {
+                    array_push($arItems,compact('order_id', 'order_date', 'good_count', 'total_price'));
+                }
+            }
+            else
+            {
+                array_push($arItems,compact('order_id', 'order_date', 'good_count', 'total_price'));
+            }
+
+        }
+
+        return json_encode($arItems);
+    }
 
 }
